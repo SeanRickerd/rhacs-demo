@@ -1,0 +1,277 @@
+= Module 08: File Activity Monitoring (FAM)
+:source-highlighter: rouge
+
+include::partial$_attributes.adoc[]
+
+This module covers File Activity Monitoring (FAM), a new runtime security capability in RHACS {rhacs_version} that detects when files are accessed, modified, or renamed in containerized workloads and on cluster nodes. FAM addresses compliance requirements for file integrity monitoring in standards like PCI-DSS and provides forensic data for incident response.
+
+*Estimated time*: 10-12 minutes
+
+== Part 1: File Activity Monitoring overview
+
+=== Know
+
+_Context: Compliance frameworks like PCI-DSS require file integrity monitoring -- the ability to detect unauthorized changes to critical system files. Traditional file integrity tools were built for static virtual machine environments. Container workloads and immutable infrastructure require a different approach._
+
+**The file integrity monitoring requirement:**
+
+* PCI-DSS Control 11.5 requires organizations to deploy file integrity monitoring on systems that store, process, or transmit cardholder data
+* The requirement exists because unauthorized file modifications are a common indicator of compromise: attackers modify configuration files, replace binaries with backdoored versions, or plant persistence mechanisms in startup scripts
+* In a traditional VM environment, tools like AIDE or Tripwire scan the filesystem periodically and alert on unexpected changes
+
+**Why traditional file integrity monitoring does not fit containers:**
+
+* Containers are designed to be immutable -- the filesystem should not change after the container starts
+* Any file modification in a running container is inherently suspicious, not just modifications to a predefined watch list
+* Traditional tools require agents installed in each container, adding overhead and complexity
+* Node-level monitoring must account for both containerized workloads and the host operating system (RHEL CoreOS)
+
+**What RHACS File Activity Monitoring provides:**
+
+* Real-time detection of file access, modification, and rename events in running containers
+* Node-level monitoring of critical host filesystem paths: `/etc`, `/boot`, `/usr/bin`, and others
+* Policy-driven alerting: define which file paths matter for your environment and create violations when those paths are modified
+* Zero in-container instrumentation -- FAM uses the same sensor architecture that powers process discovery and network monitoring
+
+**The compliance value:**
+
+FAM directly addresses PCI-DSS Control 11.5 and similar requirements in HIPAA and NIST frameworks. Security teams can demonstrate to auditors that file modifications are monitored, logged, and alerted on in real time across all containerized workloads and cluster nodes.
+
+=== Show
+
+**What I say**:
+
+"File Activity Monitoring is new in RHACS {rhacs_version}. It is specifically designed to address compliance requirements for file integrity monitoring in containerized environments. Let me show you how it works."
+
+**What I do**:
+
+. From the left side menu, navigate to *Platform Configuration > Policy Management*.
+
+. In the filter bar, type `File Activity` and press Enter to filter policies:
++
+"RHACS includes built-in policies that leverage File Activity Monitoring. These policies detect when critical filesystem paths are modified in deployments or on nodes."
+
+. Locate and click on a FAM policy such as *Deployment File Activity* or *Node File Activity*:
++
+"This policy monitors file modifications in running deployments. The Rationale section explains why file changes in a container are a security concern, and the Guidance section tells teams how to investigate the activity."
+
+. Click the *Policy Criteria* tab:
++
+"The policy criteria include a File Path field. You can specify exact paths like `/etc/passwd` or use wildcards like `/etc/**/*` to monitor an entire directory tree."
+
+. Point to the file path pattern:
++
+"This policy is configured to monitor `/etc/`, `/boot/`, and other critical system directories. Any write, modification, or rename operation in those paths triggers a violation."
+
+. Point to the ability to combine file criteria with process criteria:
++
+"You can combine file activity with process criteria. For example: alert if `/etc/shadow` is modified AND the process making the change is not `systemd`. This reduces false positives from legitimate system operations while catching unauthorized changes."
+
+**What they should notice:**
+
+* FAM policies use the same policy engine as vulnerability and runtime policies -- there is no separate tool to learn
+* File path patterns support wildcards for flexible monitoring
+* Policies can combine file activity with process identity to reduce false positives
+
+[NOTE]
+====
+**Presenter tip:** The PCI-DSS Control 11.5 reference resonates strongly with teams working in regulated industries. FAM is not just a general security feature -- it is specifically designed to satisfy a compliance requirement that is difficult to meet in containerized environments.
+====
+
+== Part 2: Deployment file activity detection
+
+=== Know
+
+_Context: In a properly designed container, the filesystem is immutable after startup. The application process reads configuration, connects to dependencies, and serves requests -- but it does not modify `/etc/passwd`, rewrite startup scripts, or alter system binaries. Any such activity is a deviation that warrants investigation._
+
+**What deployment file activity reveals:**
+
+* Attacker persistence mechanisms: modifying cron jobs, systemd units, or shell profiles to maintain access after a container restart
+* Credential theft: reading or copying `/etc/shadow`, SSH keys, or Kubernetes service account tokens
+* Binary replacement: overwriting executables with backdoored versions
+* Configuration tampering: changing application config files to disable security controls or exfiltrate data
+
+**The forensic value:**
+
+When FAM detects a file modification, the violation record includes the same forensic detail as a runtime process violation: the process name, the UID it ran as, the exact file path, and the timestamp. This is the data incident response needs to reconstruct what happened.
+
+=== Show
+
+**What I say**:
+
+"Let me show you what a file activity violation looks like and how it connects to the broader runtime story in RHACS."
+
+**What I do**:
+
+. Navigate to *Violations* from the left side menu.
+
+. In the filter bar, filter by Lifecycle Stage = *Runtime* and search for file activity violations:
++
+"Runtime violations include both process activity and file activity. Let me find a file modification event."
+
+. Click on a file activity violation (if one exists in the environment):
++
+"This violation was triggered when a file in a monitored path was modified. The detail view shows the deployment, the container, the file path, and the process that made the change."
+
+. Point to the forensic details:
++
+"You can see: the exact file that was modified, the process name and arguments, the UID, the container ID, and the timestamp. If this were a real incident, the next step would be to correlate this with the deployment's Process Discovery timeline to see what else the attacker did."
+
+. Navigate to *Risk* and select a deployment with file activity:
++
+"File activity violations also appear in the Risk view under the deployment's violation list. This gives you the full context: the deployment's configuration risk, its vulnerabilities, its runtime process activity, and now its file modifications -- all in one view."
+
+**What they should notice:**
+
+* File activity violations carry the same forensic detail as process violations
+* The violations are integrated into the Risk view alongside other security signals
+* File modifications are treated as runtime anomalies, not just compliance audit events
+
+[NOTE]
+====
+**Presenter tip:** The "containers are immutable" principle is the key framing for this feature. In a VM, file modifications are normal. In a container, they are inherently suspicious. That mental model shift helps security teams understand why FAM findings are high-signal, not noise.
+====
+
+== Part 3: Node file activity and compliance
+
+=== Know
+
+_Context: Cluster nodes run the RHEL CoreOS operating system, which hosts the container runtime, kubelet, and other critical infrastructure services. Unauthorized modifications to node-level files can compromise the entire cluster, not just a single workload._
+
+**Critical node filesystem paths:**
+
+* `/etc/` -- system configuration, including SSH config, systemd units, and user accounts
+* `/boot/` -- kernel and bootloader files; modifications here can survive reboots and persist across container deployments
+* `/usr/bin/` and `/usr/sbin/` -- system binaries; replacing these is a common persistence technique
+* `/var/lib/kubelet/` -- Kubernetes configuration and secrets; access to this path can expose service account tokens cluster-wide
+
+**Node-level monitoring for compliance:**
+
+PCI-DSS Control 11.5 applies to the infrastructure layer, not just the application layer. Monitoring must extend to the operating system hosting the cardholder data environment. RHACS FAM monitors node filesystems in addition to container filesystems, providing a single tool for both layers.
+
+**The cluster security implication:**
+
+A compromised node is a cluster-wide security event. An attacker with write access to `/boot/` or `/etc/systemd/` can maintain persistence across all containers on that node and potentially pivot to other nodes. Node-level file activity monitoring is not just a compliance checkbox -- it is a critical detection layer for advanced persistent threats.
+
+=== Show
+
+**What I say**:
+
+"FAM also monitors the cluster nodes themselves. Let me show you how node-level file activity monitoring works and how it ties to compliance requirements."
+
+**What I do**:
+
+. Navigate to *Platform Configuration > Policy Management*.
+
+. Search for and click the *Node File Activity* policy:
++
+"This policy monitors file modifications on the cluster nodes -- the RHEL CoreOS hosts running your containers."
+
+. Click the *Policy Criteria* tab and point to the monitored paths:
++
+"The policy monitors critical system paths: `/etc/`, `/boot/`, `/usr/bin/`, and others. These are the directories where an attacker would plant persistence mechanisms or modify the system to evade detection."
+
+. Point to the enforcement options:
++
+"For node-level policies, enforcement is typically set to Inform rather than Enforce. Blocking a file modification on a node could disrupt legitimate system operations. The goal is detection and alerting, with investigation happening through the violation record."
+
+. Navigate to *Compliance > Dashboard*.
+
+. Locate PCI-DSS compliance and click into the standard:
++
+"FAM directly addresses PCI-DSS Control 11.5: Deploy a change-detection mechanism to alert personnel to unauthorized modification of critical system files. With FAM enabled, RHACS satisfies this control for both containerized workloads and the underlying cluster nodes."
+
+. Point to the evidence that FAM provides for auditors:
++
+"When an auditor asks how you detect unauthorized file modifications, you can point to the FAM policies, the violation history, and the configured alert destinations. The evidence is built into the platform."
+
+**What they should notice:**
+
+* Node-level FAM monitors the same critical paths that traditional file integrity tools watch in VM environments
+* The policy engine is the same for node and deployment file activity -- no separate tooling
+* Compliance evidence is automatically generated through the policy and violation records
+
+[NOTE]
+====
+**Presenter tip:** The "single tool for containers and nodes" message is important for platform teams. They do not need one tool for application security and a different tool for node security. RHACS covers both, with a unified policy engine and a single audit trail.
+====
+
+== Part 4: Configuring File Activity Monitoring
+
+=== Know
+
+_Context: FAM is enabled per secured cluster through the SecuredCluster custom resource. The feature is not enabled by default in all environments -- platform teams must explicitly configure it._
+
+**How to enable FAM:**
+
+* FAM is controlled by the `enableFileActivityMonitoring` field in the SecuredCluster CR
+* Once enabled, the RHACS sensor begins collecting file activity events from all pods and the node itself
+* There is no per-pod or per-namespace configuration -- FAM is cluster-wide when enabled
+
+**Performance considerations:**
+
+* FAM uses eBPF (extended Berkeley Packet Filter) to monitor filesystem events at the kernel level, the same technology that powers process discovery and network monitoring
+* The overhead is minimal -- eBPF probes are highly efficient and do not require userspace context switches for every event
+* Event filtering happens in the kernel before events are sent to userspace, reducing the data volume
+
+**Policy design for FAM:**
+
+* Start with the built-in policies and narrow the scope based on your environment's needs
+* Use wildcard patterns (`/etc/**/*`) to monitor entire directory trees
+* Combine file path criteria with process or deployment name filters to reduce false positives from legitimate system activity
+
+=== Show
+
+**What I say**:
+
+"FAM is not enabled by default -- platform teams need to configure it in the SecuredCluster custom resource. Let me show you how to check whether it is enabled and how to configure it."
+
+**What I do**:
+
+. From the terminal or OpenShift console, run:
++
+[source,sh,role=execute]
+----
+oc get securedcluster -n stackrox -o yaml | grep -A 2 fileActivity
+----
++
+"This command checks the SecuredCluster configuration for the fileActivity settings."
+
+. Point to the output:
++
+"If `enableFileActivityMonitoring: true` is present, FAM is enabled for this cluster. If the field is absent or set to false, file activity events are not being collected."
+
+. Show how to enable FAM (conceptually, not executed in a read-only demo):
++
+"To enable FAM, you would edit the SecuredCluster custom resource and add:
++
+[source,yaml]
+----
+spec:
+  fileActivityMonitoring:
+    enableFileActivityMonitoring: true
+----
++
+After applying the change, the sensor pods restart and begin collecting file activity events. There is no additional agent or sidecar required."
+
+. Navigate back to *Platform Configuration > Policy Management*.
+
+. Show the built-in FAM policies again:
++
+"Once FAM is enabled, these policies become active. You can clone them and adjust the file paths, enforcement behavior, and scope to match your environment's requirements."
+
+**What they should notice:**
+
+* FAM is configured at the cluster level, not per workload
+* The same sensor that monitors processes and network activity also monitors file activity
+* Enabling FAM requires a configuration change, but no additional infrastructure
+
+[NOTE]
+====
+**Presenter tip:** The "no additional agent" point is key for platform teams concerned about performance overhead. FAM uses the existing sensor architecture -- there is no proliferation of security agents that each consume resources and require independent updates.
+====
+
+[NOTE]
+====
+**Transition:** With File Activity Monitoring covered, we have seen the full runtime security picture: process discovery, network monitoring, and now file integrity. The next module covers Integrations -- how RHACS connects to the broader security and DevOps toolchain your organization already uses.
+====

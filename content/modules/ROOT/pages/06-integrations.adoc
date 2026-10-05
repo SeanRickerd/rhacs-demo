@@ -185,6 +185,76 @@ For enterprise deployments, RHACS integrates with identity providers via OIDC an
 **Presenter tip:** The role-scoped CI token point resonates with security architects who have concerns about pipeline credentials. A compromised pipeline token that cannot modify policies is a significantly smaller blast radius than one that can. This is a defense-in-depth argument that security teams appreciate.
 ====
 
+== Part 4: Model Context Protocol (MCP) integration
+
+=== Know
+
+_Context: AI agents and assistants are becoming standard tools in security operations and development workflows. For these agents to be effective with RHACS, they need programmatic access to security data in a format that LLMs can understand and query. The Model Context Protocol (MCP) provides this access._
+
+**What the Model Context Protocol provides:**
+
+* A standardized way for AI agents (Claude, ChatGPT, custom LLMs) to query RHACS security data conversationally
+* Structured responses that LLMs can reason about, not just API endpoints that require hardcoded queries
+* Real-time access to vulnerability data, policy violations, deployment risk scores, and compliance status
+
+**AI-assisted security workflows enabled by MCP:**
+
+* Conversational security queries: "Which deployments in production have Log4Shell?" -- the AI queries RHACS and returns structured results
+* Automated remediation guidance: The AI retrieves the CVE details, affected deployments, and remediation steps from RHACS policies, then generates a specific fix plan
+* Compliance report generation: "Summarize our PCI-DSS posture and list the failing controls" -- the AI retrieves compliance scan results and produces an executive summary
+* Incident investigation: "What runtime violations occurred in the payments namespace in the last 24 hours?" -- the AI queries violations data and correlates with deployment risk information
+
+**Why this matters for security and platform teams:**
+
+Security data is often trapped in dashboards and APIs that require manual navigation or scripting to access. MCP makes that data queryable by AI assistants, enabling teams to get answers through natural language rather than learning query syntax or navigating complex UI hierarchies. This is particularly valuable during incident response, when speed and clarity matter most.
+
+=== Show
+
+**What I say**:
+
+"New in RHACS {rhacs_version}: Model Context Protocol integration. This exposes RHACS security data to AI agents in a way that supports conversational, natural language queries. Let me show you how this works."
+
+**What I do**:
+
+. On the Integrations page, look for MCP-related integrations or settings (if available in the UI):
++
+"The MCP integration allows AI agents to query RHACS data directly. Instead of a security engineer manually searching for deployments with a specific CVE, they can ask an AI assistant: 'Which deployments have CVE-2021-44228?' The AI queries RHACS via MCP and returns the list with cluster, namespace, and deployment details."
+
+. Demonstrate or describe a conceptual MCP query flow:
++
+"Here is how it works in practice. A security engineer asks their AI assistant: 'What is our current PCI-DSS compliance posture?' The AI agent:
+
+1. Queries RHACS via MCP for the latest PCI-DSS scan results
+2. Retrieves the pass/fail counts for each control
+3. Identifies the top failing controls and affected deployments
+4. Generates a plain-English summary with specific remediation recommendations
+
+The engineer gets the answer in seconds, without navigating through the compliance dashboard or running API queries manually."
+
+. Connect MCP to the broader AI integration story:
++
+"MCP complements the OpenShift Lightspeed integration we saw earlier. Lightspeed provides AI-generated explanations within the RHACS UI. MCP provides AI access to the underlying data, enabling custom workflows and integration with external AI tools your team already uses."
+
+. Point to the CLI-based MCP server (if demonstrating via terminal):
++
+[source,sh,role=execute]
+----
+roxctl central debug mcp --help
+----
++
+"The `roxctl` CLI includes an MCP server mode that can be run locally or integrated into AI agent frameworks. This gives developers and security engineers the ability to build custom AI-assisted workflows without modifying the RHACS platform itself."
+
+**What they should notice:**
+
+* MCP enables conversational access to RHACS data -- no manual API calls or UI navigation required
+* AI agents can correlate data across RHACS modules (vulnerabilities + policy violations + compliance) in a single query
+* The integration supports both built-in AI features (Lightspeed) and external AI agents (Claude, ChatGPT, custom tools)
+
+[NOTE]
+====
+**Presenter tip:** The "security data should be queryable by AI" message is forward-looking and resonates with teams already experimenting with AI-assisted workflows. Emphasize that MCP does not replace the RHACS UI or API -- it adds a natural language query layer for teams that want it.
+====
+
 [NOTE]
 ====
 **Transition:** That covers the core integration surface. The final module covers Observability -- how RHACS metrics and monitoring data fit into your existing observability stack.

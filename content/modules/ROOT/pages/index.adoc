@@ -1,6 +1,37 @@
 [[labname]]
 
-= Advanced Cluster Security Demo 
+= Advanced Cluster Security Demo
+
+== Overview
+
+This demonstration environment showcases Red Hat Advanced Cluster Security (RHACS) {rhacs_version} -- the unified security platform for OpenShift and Kubernetes covering build, deploy, and runtime security across the full application lifecycle.
+
+=== What's New in RHACS 5.x
+
+This demo environment highlights the latest capabilities in RHACS {rhacs_version}:
+
+* *Exploit Prediction Scoring System (EPSS)* -- Prioritize vulnerabilities based on real-world exploitation probability, not just severity scores. EPSS data is surfaced alongside CVSS to help teams focus remediation effort on CVEs that are both severe and likely to be exploited.
+
+* *Init Container Security Coverage* -- Full vulnerability scanning and policy enforcement for init containers. This closes a security gap that attackers previously exploited -- init containers are now monitored with the same rigor as application containers.
+
+* *File Activity Monitoring (FAM)* -- Real-time detection of file access, modification, and rename events in containerized workloads and on cluster nodes. FAM addresses compliance requirements for file integrity monitoring in PCI-DSS, HIPAA, and NIST frameworks.
+
+* *OpenShift Lightspeed AI Integration* -- AI-powered risk explanations and remediation guidance using the same LLM backend as OpenShift Lightspeed. Security data is presented in plain English with specific, actionable recommendations.
+
+* *Model Context Protocol (MCP) Integration* -- Expose RHACS security data to AI agents and assistants for conversational queries and automated workflows. Ask questions like "Which deployments have Log4Shell?" and get structured, actionable answers from your AI assistant.
+
+* *Virtual Machine Vulnerability Scanning* -- Unified vulnerability visibility for containers AND virtual machines running on OpenShift Virtualization. Scan RHEL-based VM guest operating systems from the same console that manages container security.
+
+=== Demo Environment Components
+
+This lab environment includes:
+
+* *RHACS Central* -- The security control plane with the web console and API
+* *Secured Clusters* -- OpenShift clusters with RHACS sensors deployed for runtime monitoring
+* *Sample Workloads* -- Deployments with various security configurations, vulnerabilities, and runtime behaviors for demonstration
+* *Integrations* -- Pre-configured integrations with Splunk, MCP server, OpenShift Pipelines (Tekton), and Policy as Code via Argo CD
+* *Sample Virtual Machine* -- A virtual machine workload for demonstrating VM vulnerability scanning
+* *File Activity Monitoring* -- Enabled on the demo cluster to showcase runtime file integrity monitoring
 
 == Setup Instructions
 
