@@ -1,0 +1,250 @@
+= RHACS 5.x Demo: Product Pillars
+:source-highlighter: rouge
+
+include::partial$_attributes.adoc[]
+
+This is a streamlined, high-impact demo organized around the three core product pillars of Red Hat Advanced Cluster Security {rhacs_version}. Each pillar demonstration is designed for maximum impact in 10 clicks or less.
+
+*Total demo time*: 15-20 minutes
+
+---
+
+== Pillar 1: AI-Driven Vulnerability & Risk Management
+
+*Goal*: Show how AI and data-driven prioritization help teams fix what matters, not just what scores high.
+
+*Message*: RHACS doesn't just find vulnerabilities—it tells you which ones to fix first using EPSS, runtime context, and AI-powered guidance.
+
+=== The Story (2 minutes, 10 clicks)
+
+**What I say:**
+
+"Security teams drown in CVE alerts. RHACS solves this with AI-driven prioritization: EPSS scoring shows exploitation probability, not just severity. Runtime context shows what's actually deployed. AI explains why it matters and how to fix it."
+
+**What I do:**
+
+. *Navigate to:* Vulnerability Management > Results > Workload CVEs
++
+"Four workload types: containers, platform, nodes, and VMs. Filtered by default to fixable Critical/Important CVEs."
+
+. *Click:* <#> Deployments button
++
+"These are running workloads with fixable vulnerabilities—not just images sitting in a registry."
+
+. *Click:* visa-processor deployment (or highest-risk image)
++
+"This deployment is running in production with 12 CRITICAL CVEs."
+
+. *Point to:* EPSS score in CVE detail panel
++
+"**NEW in 5.x:** EPSS—Exploit Prediction Scoring. CVSS 9.0 with 5% EPSS is less urgent than CVSS 7.0 with 95% EPSS. Fix what's actually being exploited."
+
+. *Click:* A CVE with high EPSS score
++
+"This CVE has 92% probability of exploitation in the next 30 days. That's your priority."
+
+. *Navigate to:* Risk (left sidebar)
++
+"Risk combines vulnerabilities with deployment configuration and runtime activity."
+
+. *Click:* Top deployment in the risk list
++
+"This is the highest-risk workload in your environment."
+
+. *Point to:* Risk Indicators panel
++
+"Why it's risky: 12 CRITICAL CVEs + privileged container + externally exposed + has bash/curl for attacker tools."
+
+. *Point to:* AI risk explanation (if available)
++
+"**NEW in 5.x:** OpenShift Lightspeed AI explains the risk in plain English and recommends specific fixes: 'Update to UBI 9, apply NetworkPolicy, remove package managers.'"
+
+. *Click:* Process Discovery tab
++
+"Runtime monitoring shows bash executed 2 hours after startup—not normal for a payment service. Potential breach."
+
+**Key takeaways:**
+
+* EPSS prioritizes by exploitation probability, not just severity
+* Risk scoring combines CVEs + configuration + runtime behavior
+* AI provides plain-English explanations and actionable remediation steps
+* 10 clicks: from vulnerability list to confirmed compromise indicator
+
+---
+
+== Pillar 2: Unified Workload Protection
+
+*Goal*: Show how RHACS protects containers, VMs, nodes, platform, and init containers from one console.
+
+*Message*: One platform, one policy engine, one audit trail—for every workload type in your OpenShift environment.
+
+=== The Story (2 minutes, 8 clicks)
+
+**What I say:**
+
+"Traditional security tools are fragmented: one for containers, one for VMs, one for nodes. RHACS is unified—scan and enforce policies across all workload types from a single console."
+
+**What I do:**
+
+. *Navigate to:* Vulnerability Management > Results
++
+"Four tabs: Workload CVEs (containers), Platform CVEs (OpenShift), Node CVEs (RHEL CoreOS), and **NEW in 5.x:** Virtual Machine CVEs."
+
+. *Click:* Virtual Machine CVEs tab
++
+"**NEW in 5.x:** Scan VMs running on OpenShift Virtualization. Same console, same CVE database, same remediation workflow."
+
+. *Click:* A VM workload (if available)
++
+"RHEL 9 VM with 8 fixable CVEs. Fix path: patch via dnf or rebuild the VM image. Same EPSS scoring, same risk context."
+
+. *Click:* Platform CVEs tab
++
+"OpenShift component vulnerabilities—your platform team's responsibility. Links directly to RHSA advisories for fixes."
+
+. *Navigate to:* Vulnerability Management > Results > Workload CVEs > acs-init-container-test namespace
++
+"**NEW in 5.x:** Init container coverage. Attackers exploited this gap—RHACS closes it."
+
+. *Click:* dirty-app deployment
++
+"Init container with python:2.7-slim—end-of-life, unpatched. Before 5.x, this was invisible."
+
+. *Navigate to:* Platform Configuration > Policy Management
++
+"80+ built-in policies. One engine for all lifecycle stages: Build, Deploy, Runtime."
+
+. *Filter:* Search for "Alpine Linux Package Manager"
++
+"This policy blocks images with apk. Applies to app containers AND init containers now. One policy, all workload types."
+
+**Key takeaways:**
+
+* Unified scanning: containers, VMs, nodes, platform, init containers
+* One policy engine for all workload types and lifecycle stages
+* Init container gap closed—no more blind spots for attackers
+* 8 clicks: from container CVEs to VM CVEs to init container coverage
+
+---
+
+== Pillar 3: Frictionless Security Controls & Runtime Observability
+
+*Goal*: Show how RHACS enforces security without slowing down deployments and provides forensic runtime data when things go wrong.
+
+*Message*: Security that gets out of the way until it matters. Enforcement is automated, runtime monitoring is continuous, and incident response data is built-in.
+
+=== The Story (3 minutes, 10 clicks)
+
+**What I say:**
+
+"Security can't slow down development. RHACS enforces at the API layer—bad deployments are blocked before they start. Runtime monitoring is continuous and automatic. When something goes wrong, you get forensic data, not just alerts."
+
+**What I do:**
+
+. *Navigate to:* Violations (left sidebar)
++
+"Event stream of policy violations: deploy-time blocks and runtime detections."
+
+. *Filter:* Lifecycle Stage = Runtime
++
+"Runtime violations: package managers executing, shells spawned, anomalous processes."
+
+. *Click:* Ubuntu Package Manager Execution violation
++
+"apt-get executed inside a running container. Forensic data: process name, arguments, UID, container ID, timestamp."
+
+. *Click:* Policy tab
++
+"Guidance tells the developer exactly how to fix: remove apt with this Dockerfile command. Alert becomes permanent fix."
+
+. *Navigate to:* Network > Network Graph
++
+"Real-time traffic visualization. Deployment-level flows, not IP-based—stays accurate as pods reschedule."
+
+. *Select:* Namespace with traffic (e.g., payments)
++
+"Microservices topology auto-derived from observed traffic. No manual diagramming."
+
+. *Click:* visa-processor deployment
++
+"Baseline flows + anomalous flows. Unexpected connection after baseline locked = lateral movement indicator."
+
+. *Click:* Network Policy generator button > Generate and Simulate
++
+"Auto-generate Kubernetes NetworkPolicy YAML from observed traffic. Standard K8s, not proprietary. Commit to Git, apply to cluster."
+
+. *Navigate to:* Platform Configuration > Policy Management > Search: "File Activity"
++
+"**NEW in 5.x:** File Activity Monitoring. Detects file modifications in containers and on nodes. Required for PCI-DSS Control 11.5."
+
+. *Click:* Deployment File Activity policy > Policy Criteria tab
++
+"Monitor /etc/, /boot/, /usr/bin/. Any write triggers a violation. Containers are immutable—file changes are inherently suspicious."
+
+**Key takeaways:**
+
+* Violations carry forensic detail: who, what, when, where
+* Network graph auto-generates NetworkPolicy YAML—no manual firewall rules
+* File Activity Monitoring (NEW in 5.x) satisfies compliance requirements
+* Enforcement is automated at the Kubernetes admission layer—no developer friction
+* 10 clicks: from runtime violation to network policy generation to file integrity monitoring
+
+---
+
+== Wrap-Up: The Three Pillars
+
+**What I say:**
+
+"That's RHACS in three pillars:
+
+1. **AI-Driven Vulnerability & Risk Management**: EPSS scoring, runtime context, AI explanations—fix what matters, not just what scores high.
+
+2. **Unified Workload Protection**: One console for containers, VMs, nodes, platform, and init containers. One policy engine, one audit trail.
+
+3. **Frictionless Security Controls & Runtime Observability**: Enforcement at the API layer, auto-generated network policies, forensic runtime data, and file integrity monitoring.
+
+All of this is Kubernetes-native. No agents in your pods. No proprietary firewall. Security controls are standard OpenShift objects you can audit and version in Git.
+
+Questions?"
+
+---
+
+== Quick Reference: 10-Click Paths
+
+=== Pillar 1: AI-Driven Vuln & Risk (10 clicks)
+1. Vuln Mgmt > Results > Workload CVEs
+2. Click Deployments button
+3. Click visa-processor
+4. Point to EPSS score
+5. Click high-EPSS CVE
+6. Navigate to Risk
+7. Click top deployment
+8. Point to Risk Indicators
+9. Point to AI explanation
+10. Click Process Discovery tab
+
+=== Pillar 2: Unified Workload Protection (8 clicks)
+1. Vuln Mgmt > Results tabs (show all 4)
+2. Click VM CVEs tab
+3. Click a VM
+4. Click Platform CVEs tab
+5. Navigate to acs-init-container-test namespace
+6. Click dirty-app
+7. Navigate to Policy Mgmt
+8. Filter for Alpine package manager policy
+
+=== Pillar 3: Frictionless Security & Runtime (10 clicks)
+1. Violations
+2. Filter Runtime
+3. Click package manager violation
+4. Click Policy tab
+5. Navigate to Network Graph
+6. Select namespace
+7. Click deployment
+8. Click Network Policy generator
+9. Navigate to Policy Mgmt > File Activity
+10. Click policy > Criteria tab
+
+---
+
+*Total demo clicks: 28 across 3 pillars (7-8 minutes of navigation, 12-13 minutes of talking)*
